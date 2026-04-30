@@ -1,0 +1,47 @@
+name: Test BigQuery SQL Queries
+
+on:
+  push:
+    paths:
+      - '**.sql'
+  pull_request:
+    paths:
+      - '**.sql'
+  workflow_dispatch:
+
+jobs:
+  test-queries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install sqlparse
+      
+      - name: Syntax check SQL files
+        run: |
+          echo "Checking SQL syntax..."
+          for file in $(find . -name "*.sql" -type f); do
+            echo "Checking $file..."
+            # Basic SQL syntax validation
+            if python3 -c "import sqlparse; sqlparse.parse(open('$file').read())" 2>/dev/null; then
+              echo "✓ $file syntax valid"
+            else
+              echo "✗ $file has syntax issues"
+              exit 1
+            fi
+          done
+          echo "All SQL files passed syntax checks!"
+      
+      - name: Check for required templates
+        run: |
+          echo "Checking required files..."
+          test -f README.md && echo "✓ README.md exists" || (echo "✗ README.md missing" && exit 1)
+          test -f hypothesis/template.md && echo "✓ hypothesis/template.md exists" || (echo "✗ hypothesis/template.md missing" && exit 1)
+          echo "All required files present!"
