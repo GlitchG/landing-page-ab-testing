@@ -1,0 +1,23 @@
+name: 'landing_page_ab_testing'
+version: '1.0.0'
+config-version: 2
+
+profile: 'landing_page_ab_testing'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+
+models:
+  landing_page_ab_testing:
+    ab_tests:
+      +materialized: view
+      +schema: ab_tests
+    landing_pages:
+      +materialized: view
+      +schema: landing_pages
+    utils:
+      +materialized: ephemeral
+
+vars:
+  ga4_project: 'your-gcp-project'
+  ga4_dataset: 'your-ga4-dataset'
