@@ -1,6 +1,6 @@
 ### Landing Page AB Testing — SQL Templates
 
-A set of SQL templates for AB test analysis on GA4 BigQuery data: power analysis, t-test, Bayesian comparison, SRM detection, guardrails.
+A **dbt** project with SQL templates for AB test analysis on GA4 BigQuery data: power analysis, t-test, Bayesian comparison, SRM detection, guardrails. Templates can also be run standalone — paste into the BigQuery console.
 
 #### A note on the dataset
 
