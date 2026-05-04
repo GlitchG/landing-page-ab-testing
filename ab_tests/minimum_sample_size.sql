@@ -3,7 +3,7 @@
 -- Uses standard formula for two-proportion Z-test
 
 DECLARE baseline_cr FLOAT64 DEFAULT 0.02; -- 2.0% baseline conversion rate
-DECLARE mde_relative FLOAT64 DEFAULT 0.15; -- 15% relative improvement (2.0% → 2.3%)
+DECLARE mde_relative FLOAT64 DEFAULT 0.15; -- 15% relative improvement (2.0% -> 2.3%)
 DECLARE alpha FLOAT64 DEFAULT 0.05; -- Significance level (5%)
 DECLARE power FLOAT64 DEFAULT 0.80; -- Statistical power (80%)
 
@@ -12,7 +12,7 @@ DECLARE mde_absolute FLOAT64 DEFAULT baseline_cr * mde_relative;
 DECLARE variant_cr FLOAT64 DEFAULT baseline_cr * (1 + mde_relative);
 
 -- Z-scores for alpha (two-tailed) and power
--- Z_alpha/2 for two-tailed: 1.96 for α=0.05
+-- Z_alpha/2 for two-tailed: 1.96 for alpha=0.05
 -- Z_beta for power: 0.84 for power=0.80
 DECLARE z_alpha FLOAT64 DEFAULT 1.96; -- NORM.S.INV(1 - alpha/2)
 DECLARE z_beta FLOAT64 DEFAULT 0.84; -- NORM.S.INV(power)
@@ -78,14 +78,15 @@ SELECT
   NULL, NULL, NULL, NULL, NULL;
 
 -- Quick Reference Table
+-- Values computed using the standard two-proportion sample size formula
 SELECT
   'QUICK REFERENCE (Baseline 2.0%)' AS info,
   '' AS value
 UNION ALL
-SELECT 'MDE 10% (2.0%→2.2%): ~38,000 per variant (76k total)', ''
+SELECT 'MDE 10% (2.0%->2.2%): ~80,700 per variant (161k total)', ''
 UNION ALL
-SELECT 'MDE 15% (2.0%→2.3%): ~21,400 per variant (43k total)', ''
+SELECT 'MDE 15% (2.0%->2.3%): ~36,600 per variant (73k total)', ''
 UNION ALL
-SELECT 'MDE 20% (2.0%→2.4%): ~12,200 per variant (24k total)', ''
+SELECT 'MDE 20% (2.0%->2.4%): ~20,900 per variant (42k total)', ''
 UNION ALL
-SELECT 'MDE 30% (2.0%→2.6%): ~5,400 per variant (11k total)', '';
+SELECT 'MDE 30% (2.0%->2.6%): ~9,600 per variant (19k total)', '';

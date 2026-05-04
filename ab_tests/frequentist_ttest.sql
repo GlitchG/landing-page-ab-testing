@@ -1,4 +1,4 @@
--- Frequentist AB Test (T-Test / Z-Test)
+-- Frequentist AB Test (Two-Proportion Z-Test)
 -- Compare conversion rates between Control (A) and Variant (B)
 -- Uses standard two-proportion Z-test (approximation of T-test for large samples)
 
@@ -26,11 +26,12 @@ WITH experiment_sessions AS (
   GROUP BY 1, 2
   HAVING variant IS NOT NULL
 ),
+-- Binary conversion: did the user make at least one purchase in the session window?
 conversions AS (
   SELECT
     e.user_pseudo_id,
     e.variant,
-    COUNTIF(ev.event_name = 'purchase') AS conversions
+    MAX(CASE WHEN ev.event_name = 'purchase' THEN 1 ELSE 0 END) AS converted
   FROM experiment_sessions e
   LEFT JOIN `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*` ev
     ON e.user_pseudo_id = ev.user_pseudo_id
@@ -42,10 +43,10 @@ variant_stats AS (
   SELECT
     variant,
     COUNT(*) AS visitors,
-    SUM(conversions) AS total_conversions,
-    AVG(conversions) AS conversion_rate,
-    AVG(conversions) AS p, -- proportion for Z-test
-    STDDEV(conversions) AS stddev
+    SUM(converted) AS total_conversions,
+    AVG(converted) AS conversion_rate,
+    AVG(converted) AS p, -- proportion for Z-test
+    STDDEV(converted) AS stddev
   FROM conversions
   GROUP BY 1
 ),
@@ -97,7 +98,7 @@ SELECT
   ROUND((p_b - p_a) + 1.96 * se, 4) AS ci_upper,
   -- Significance indicator
   CASE 
-    WHEN ABS(z_score) > 1.96 THEN '✅ Significant (p < 0.05)'
-    ELSE '❌ Not Significant (p >= 0.05)'
+    WHEN ABS(z_score) > 1.96 THEN 'Significant (p < 0.05)'
+    ELSE 'Not Significant (p >= 0.05)'
   END AS significance
 FROM z_test_calculation;

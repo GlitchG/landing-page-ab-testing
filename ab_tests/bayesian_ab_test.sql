@@ -1,6 +1,9 @@
--- Bayesian AB Test
+-- Bayesian AB Test (Normal Approximation)
 -- Calculate probability that Variant B is better than Control A
--- Uses Beta distribution (conjugate prior for Bernoulli trials)
+-- Uses Beta priors with normal approximation for the posterior difference
+-- Note: BigQuery does not have built-in Beta CDF or Monte Carlo sampling.
+--       The probability below uses a normal approximation of the Beta
+--       posterior difference, which is accurate for sample sizes > 30.
 
 DECLARE start_date STRING DEFAULT '20210101';
 DECLARE end_date STRING DEFAULT '20210131';
@@ -48,8 +51,11 @@ variant_stats AS (
   FROM conversions
   GROUP BY 1
 ),
--- Simulate posterior distribution using Monte Carlo (simplified approximation)
--- In production, use BigQuery ML or external tool for full posterior
+-- Normal approximation of P(Beta_B > Beta_A)
+-- Each Beta(alpha, beta) is approximated as Normal(mu, sigma^2):
+--   mu = alpha / (alpha + beta)
+--   sigma^2 = alpha*beta / ((alpha+beta)^2 * (alpha+beta+1))
+-- P(B > A) = Phi((mu_B - mu_A) / sqrt(sigma_A^2 + sigma_B^2))
 probability_calc AS (
   SELECT
     a.variant AS control,
@@ -64,9 +70,6 @@ probability_calc AS (
     a.beta AS beta_a,
     b.alpha AS alpha_b,
     b.beta AS beta_b,
-    -- Approximate Probability(B > A) using analytical formula for Beta distributions
-    -- P(B > A) ≈ 1 / (1 + EXP(-( (alpha_b - alpha_a) - (beta_b - beta_a) ) / SQRT(alpha_b + beta_b + alpha_a + beta_a) ))
-    -- Simplified: Use normal approximation of Beta
     ROUND(
       0.5 * (1 + ERF(
         ( (b.alpha / (b.alpha + b.beta)) - (a.alpha / (a.alpha + a.beta)) ) /
@@ -94,10 +97,10 @@ SELECT
   prob_b_better_than_a AS probability_b_better,
   ROUND(prob_b_better_than_a * 100, 1) AS probability_b_better_pct,
   CASE 
-    WHEN prob_b_better_than_a > 0.95 THEN '✅ Strong evidence for Variant B (P > 95%)'
-    WHEN prob_b_better_than_a > 0.90 THEN '🟡 Moderate evidence for Variant B (P > 90%)'
-    WHEN prob_b_better_than_a < 0.10 THEN '✅ Strong evidence for Control A (P(B) < 10%)'
-    WHEN prob_b_better_than_a BETWEEN 0.40 AND 0.60 THEN '⚠️ Inconclusive (P ≈ 50%)'
-    ELSE '🟡 Weak evidence, continue test'
+    WHEN prob_b_better_than_a > 0.95 THEN 'Strong evidence for Variant B (P > 95%)'
+    WHEN prob_b_better_than_a > 0.90 THEN 'Moderate evidence for Variant B (P > 90%)'
+    WHEN prob_b_better_than_a < 0.10 THEN 'Strong evidence for Control A (P(B) < 10%)'
+    WHEN prob_b_better_than_a BETWEEN 0.40 AND 0.60 THEN 'Inconclusive (P ~ 50%)'
+    ELSE 'Weak evidence, continue test'
   END AS bayesian_decision
 FROM probability_calc;
