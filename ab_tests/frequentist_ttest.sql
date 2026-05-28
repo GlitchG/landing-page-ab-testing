@@ -62,11 +62,13 @@ z_test_calculation AS (
     b.conversion_rate AS p_b,
     -- Pooled proportion
     (a.total_conversions + b.total_conversions) / (a.visitors + b.visitors) AS p_pooled,
-    -- Standard error
+    -- Unpooled standard error of the difference (used for the confidence interval).
+    -- The CI is built around the OBSERVED difference, so each variant keeps its own
+    -- proportion. (The Z-test below uses the POOLED SE, which assumes the null
+    -- hypothesis p_a = p_b — correct for the test statistic, wrong for the interval.)
     SQRT(
-      (a.total_conversions + b.total_conversions) / (a.visitors + b.visitors) *
-      (1 - (a.total_conversions + b.total_conversions) / (a.visitors + b.visitors)) *
-      (1.0/a.visitors + 1.0/b.visitors)
+      a.conversion_rate * (1 - a.conversion_rate) / a.visitors +
+      b.conversion_rate * (1 - b.conversion_rate) / b.visitors
     ) AS se,
     -- Z-score
     (b.conversion_rate - a.conversion_rate) / 
