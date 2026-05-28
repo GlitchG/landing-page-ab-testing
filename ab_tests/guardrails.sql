@@ -33,8 +33,9 @@ session_metrics AS (
     END AS is_bounce,
     -- Session duration
     ROUND((MAX(ev.event_timestamp) - MIN(ev.event_timestamp)) / (1000000 * 60), 2) AS session_duration_min,
-    -- Pages per session
-    COUNT(DISTINCT CASE WHEN ev.event_name = 'page_view' THEN ev.event_name END) AS pages_per_session,
+    -- Pages per session (count of page_view events, not distinct names —
+    -- COUNT(DISTINCT event_name) of a constant is always 1)
+    COUNTIF(ev.event_name = 'page_view') AS pages_per_session,
     -- Cart abandonment (added to cart but no purchase)
     MAX(CASE WHEN ev.event_name = 'add_to_cart' THEN 1 ELSE 0 END) AS added_to_cart,
     MAX(CASE WHEN ev.event_name = 'purchase' THEN 1 ELSE 0 END) AS purchased,
