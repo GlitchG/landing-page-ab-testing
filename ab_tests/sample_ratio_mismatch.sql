@@ -77,11 +77,14 @@ SELECT
   (SELECT SUM(POW(v.user_count - (t.total_users * expected_ratio), 2) / (t.total_users * expected_ratio)) 
    FROM variant_counts v CROSS JOIN total t) AS chi_square_statistic,
   1 AS degrees_of_freedom, -- 2 groups - 1
-  -- P-value (approximation for chi-square with 1 df)
-  ROUND(1 - 0.5 * (1 + ERF(SQRT(
-    (SELECT SUM(POW(v.user_count - (t.total_users * expected_ratio), 2) / (t.total_users * expected_ratio)) 
+  -- P-value for chi-square with 1 df. A chi-square(1) variate is the square of
+  -- a standard normal, so the upper-tail probability is ERFC(sqrt(x/2)) =
+  -- 1 - ERF(sqrt(x/2)). (The earlier 0.5*(1+ERF(...)) form returned half the
+  -- correct p-value — e.g. 0.025 instead of 0.05 at the 3.84 critical value.)
+  ROUND(1 - ERF(SQRT(
+    (SELECT SUM(POW(v.user_count - (t.total_users * expected_ratio), 2) / (t.total_users * expected_ratio))
      FROM variant_counts v CROSS JOIN total t) / 2
-  ))), 4) AS p_value,
+  )), 4) AS p_value,
   CASE 
     WHEN (SELECT SUM(POW(v.user_count - (t.total_users * expected_ratio), 2) / (t.total_users * expected_ratio)) 
           FROM variant_counts v CROSS JOIN total t) > 6.63 
